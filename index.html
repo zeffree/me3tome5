@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>M365 E5 vs E3 + Competitive Stack — Cost & Capability Simulator</title>
+<title>M365 E5 vs E3 + Competitive Stack — Cost & Capability Simulator (Jul 2026 pricing)</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
   :root, [data-theme="dark"]{
@@ -67,7 +67,7 @@
 <header>
   <div class="head-text">
     <h1>M365 E5 vs E3 + Competitive Stack — Cost & Capability Simulator</h1>
-    <div class="sub">Compare staying on Microsoft 365 E5 vs downgrading to E3 and replacing E5-exclusive capabilities with best-of-breed competitors. Adjust users, term, and stack — costs update live. <span class="pill">List prices, USD, monthly per user unless noted</span></div>
+    <div class="sub">Compare staying on Microsoft 365 E5 vs downgrading to E3 and replacing E5-exclusive capabilities with best-of-breed competitors. Adjust users, term, and stack — costs update live. <span class="pill">Reflects Microsoft pricing & packaging effective <strong>1 Jul 2026</strong></span> <span class="pill">List prices, USD, monthly per user</span></div>
   </div>
   <button id="themeBtn" class="theme-toggle" type="button" title="Toggle light/dark"><span id="themeIcon">🌙</span><span id="themeLabel">Dark</span></button>
 </header>
@@ -149,9 +149,11 @@
 
       <div id="tab-notes" class="hidden">
         <ul style="font-size:13px;line-height:1.7;color:var(--muted)">
+          <li><strong>Microsoft pricing & packaging effective 1 July 2026</strong> (announced Dec 2025): Office 365 E3 $23→<strong>$26</strong>, Microsoft 365 E3 $36→<strong>$39</strong>, Microsoft 365 E5 $57→<strong>$60</strong>. Frontline (F1) up to +33%. Office 365 E1 unchanged.</li>
+          <li><strong>New capabilities included in E3 from 1 Jul 2026 (no extra charge):</strong> Defender for Office 365 Plan 1 (was a separate $2 add-on), Microsoft 365 Copilot Chat with Agent Mode in Word/Excel/PowerPoint/Outlook/OneNote (not full Copilot), Intune Remote Help, Intune Advanced Analytics. The E3 → E5 capability gap therefore narrows: Defender for O365 in E5 now represents the P2 increment (~$2) rather than full P1+P2.</li>
+          <li><strong>Effective price impact</strong> for many enterprises is higher than the headline 5–13%: Microsoft also removed large-volume Enterprise Agreement discounts (effective Nov 2025), so realised increases often land in the <strong>15–23%</strong> range. Use the Microsoft discount field to model your post-Nov-2025 EA rate.</li>
           <li>Vendors are sourced from the latest Gartner Magic Quadrants for each market (EPP 2025, Email Security Platforms 2024, Access Management 2024, SSE 2024, Analytics & BI Platforms 2024, UCaaS 2024, Enterprise Information Archiving 2024, Data Security Platforms / DSPM 2025). Position labels in dropdowns: <strong>L</strong>=Leader, <strong>C</strong>=Challenger, <strong>V</strong>=Visionary, <strong>NP</strong>=Niche Player.</li>
           <li>Prices are public list prices (USD, per user / month) collected from vendor websites; actual EA / volume pricing varies. Adjust the discount fields to model your negotiated rates.</li>
-          <li>Microsoft list: M365 E3 $36.00, M365 E5 $57.00, Power BI Pro $14.00, Teams Phone $8.00, Defender for O365 P2 $5.00, Entra ID P2 $9.00 (incremental from P1 in E3).</li>
           <li>Competitor list (typical commercial tier): CrowdStrike Falcon Pro $8.99, Proofpoint Email Protection $5.50, Okta Identity Engine + Adaptive MFA $11.00, Tableau Creator $75.00, Zoom Phone Pro $15.00, Mimecast Archive $4.00, Exterro eDiscovery $6.00, Netskope CASB $7.00, Varonis DSPM $5.00.</li>
           <li>Capability mapping treats E5 as the baseline. "Partial" means the competitor covers the use case but with integration cost or reduced native fit inside the M365 surface.</li>
           <li>This model excludes one-time migration, integration labor, training, and ELA true-up costs — typically $20–$60 per user one-time when introducing 3+ new vendors.</li>
@@ -165,10 +167,11 @@
 
 <script>
 // ---------- Data ----------
+// Pricing reflects Microsoft list effective 1 July 2026 (announced Dec 2025).
 const E5_LINES = [
-  {name:"Microsoft 365 E5 (all-in)", price:57.00},
+  {name:"Microsoft 365 E5 (all-in, Jul 2026 list)", price:60.00},
 ];
-const E3_BASE = {name:"Microsoft 365 E3 (baseline)", price:36.00};
+const E3_BASE = {name:"Microsoft 365 E3 (baseline, Jul 2026 list — now incl. Defender for O365 P1, Copilot Chat w/ Agent Mode, Intune Remote Help, Intune Advanced Analytics)", price:39.00};
 
 // Each "gap" has a Microsoft component (already in E5) and 1+ competitor replacements.
 // Each gap = a capability E5 covers. Competitor list is curated from the most recent
@@ -222,9 +225,9 @@ const GAPS = [
       {name:"Cisco Secure Endpoint Advantage (NP)", price:7.20},
       {name:"ESET PROTECT Enterprise (NP)", price:6.10},
     ]},
-  { id:"o365sec", label:"Email security (Defender for O365 P2)",
+  { id:"o365sec", label:"Email security — P2 increment (P1 is now in E3 from Jul 2026)",
     mq:"Email Security Platforms MQ (2024)",
-    msComponent:{name:"Defender for O365 P2 (in E5)", price:5.00},
+    msComponent:{name:"Defender for O365 P2 increment over P1 (in E5)", price:2.00},
     competitors:[
       {name:"Proofpoint Email Protection + TAP (L)", price:5.50, default:true},
       {name:"Mimecast Email Security Enterprise (L)", price:4.50},
