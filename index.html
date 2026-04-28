@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>M365 E5 vs E3 + Competitive Stack — Cost & Capability Simulator</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root, [data-theme="dark"]{
+    --bg:#0b1020; --bg2:#080c1c; --panel:#121831; --panel2:#192043; --ink:#e8ecf7; --muted:#9aa3c7;
+    --accent:#5b8def; --good:#23c993; --warn:#ffb454; --bad:#ff6b6b; --line:#262d4d;
+    --header-bg:rgba(18,24,49,.7); --input-bg:#192043; --tick:#9aa3c7;
+  }
+  [data-theme="light"]{
+    --bg:#f5f7fb; --bg2:#eaeef7; --panel:#ffffff; --panel2:#f1f4fb; --ink:#13192e; --muted:#5b6485;
+    --accent:#2563eb; --good:#0e9f6e; --warn:#d97706; --bad:#dc2626; --line:#dde3f0;
+    --header-bg:rgba(255,255,255,.85); --input-bg:#ffffff; --tick:#5b6485;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;background:linear-gradient(180deg,var(--bg2),var(--bg));color:var(--ink);min-height:100vh;transition:background .25s,color .25s}
+  header{padding:28px 32px;border-bottom:1px solid var(--line);background:var(--header-bg);backdrop-filter:blur(8px);position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+  .head-text{flex:1}
+  h1{margin:0 0 6px;font-size:22px;letter-spacing:.2px}
+  .sub{color:var(--muted);font-size:13px}
+  .theme-toggle{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:8px 14px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+  .theme-toggle:hover{border-color:var(--accent)}
+  main{max-width:1280px;margin:0 auto;padding:24px 32px 80px;display:grid;grid-template-columns:340px 1fr;gap:24px}
+  @media (max-width: 980px){ main{grid-template-columns:1fr} }
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .panel h2{margin:0 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted)}
+  label{display:block;font-size:13px;color:var(--muted);margin:10px 0 6px}
+  input[type=number],input[type=range],select{width:100%;background:var(--input-bg);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 10px;font-size:14px}
+  .row{display:flex;gap:8px;align-items:center}
+  .row > *{flex:1}
+  .stack-toggle{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+  .opt{display:flex;justify-content:space-between;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;cursor:pointer}
+  .opt input{accent-color:var(--accent)}
+  .opt small{color:var(--muted);display:block;margin-top:2px}
+  .opt select{background:var(--bg) !important;color:var(--ink) !important}
+  .summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .card h3{margin:0 0 4px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+  .price{font-size:28px;font-weight:600;letter-spacing:-.5px}
+  .price small{font-size:13px;color:var(--muted);font-weight:400;margin-left:4px}
+  .delta{margin-top:6px;font-size:13px;display:inline-block;padding:3px 8px;border-radius:999px}
+  .delta.good{background:rgba(35,201,147,.15);color:var(--good)}
+  .delta.bad{background:rgba(255,107,107,.15);color:var(--bad)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+  th{font-weight:500;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.8px}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+  .cap-yes{color:var(--good);font-weight:600}
+  .cap-partial{color:var(--warn);font-weight:600}
+  .cap-no{color:var(--bad);font-weight:600}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:780px){ .grid2{grid-template-columns:1fr} }
+  canvas{max-height:280px}
+  footer{color:var(--muted);font-size:12px;padding:0 32px 24px;max-width:1280px;margin:0 auto}
+  .tabbar{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .tab{padding:7px 12px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);font-size:12px;cursor:pointer}
+  .tab.active{background:var(--accent);color:white;border-color:var(--accent)}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="head-text">
+    <h1>M365 E5 vs E3 + Competitive Stack — Cost & Capability Simulator</h1>
+    <div class="sub">Compare staying on Microsoft 365 E5 vs downgrading to E3 and replacing E5-exclusive capabilities with best-of-breed competitors. Adjust users, term, and stack — costs update live. <span class="pill">List prices, USD, monthly per user unless noted</span></div>
+  </div>
+  <button id="themeBtn" class="theme-toggle" type="button" title="Toggle light/dark"><span id="themeIcon">🌙</span><span id="themeLabel">Dark</span></button>
+</header>
+
+<main>
+  <!-- Controls -->
+  <aside class="panel">
+    <h2>Inputs</h2>
+    <label>Number of users</label>
+    <div class="row"><input id="users" type="number" min="1" value="1000" /><input id="usersRange" type="range" min="50" max="25000" value="1000" /></div>
+
+    <label>Contract term</label>
+    <select id="term" style="width:100%">
+      <option value="1">1 year</option>
+      <option value="3" selected>3 years</option>
+      <option value="5">5 years</option>
+    </select>
+
+    <label>Enterprise discount on Microsoft list (%)</label>
+    <input id="msDisc" type="number" min="0" max="40" value="0" />
+
+    <label>Enterprise discount on competitor list (%)</label>
+    <input id="cmpDisc" type="number" min="0" max="40" value="0" />
+
+    <h2 style="margin-top:18px">E3 Replacement Stack</h2>
+    <div class="sub" style="font-size:12px;margin-bottom:8px">Toggle the competitive products that fill the gap from E5 → E3.</div>
+    <div id="stack" class="stack-toggle"></div>
+  </aside>
+
+  <!-- Output -->
+  <section>
+    <div class="summary">
+      <div class="card">
+        <h3>Option A — Microsoft 365 E5</h3>
+        <div class="price" id="aMonthly">$0<small>/mo total</small></div>
+        <div class="sub" id="aPerUser">$0 per user / month</div>
+        <div class="sub" id="aTerm" style="margin-top:6px">$0 over term</div>
+      </div>
+      <div class="card">
+        <h3>Option B — M365 E3 + Competitive Stack</h3>
+        <div class="price" id="bMonthly">$0<small>/mo total</small></div>
+        <div class="sub" id="bPerUser">$0 per user / month</div>
+        <div class="sub" id="bTerm" style="margin-top:6px">$0 over term</div>
+        <div id="delta" class="delta good">—</div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:16px">
+      <div class="tabbar">
+        <div class="tab active" data-tab="break">Cost breakdown</div>
+        <div class="tab" data-tab="chart">Charts</div>
+        <div class="tab" data-tab="caps">Capability parity</div>
+        <div class="tab" data-tab="notes">Assumptions</div>
+      </div>
+
+      <div id="tab-break">
+        <div class="grid2">
+          <div>
+            <h2 style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:0 0 8px">Option A — E5 line items</h2>
+            <table id="aTable"><thead><tr><th>Component</th><th class="num">$/user/mo</th><th class="num">Monthly</th></tr></thead><tbody></tbody></table>
+          </div>
+          <div>
+            <h2 style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:0 0 8px">Option B — E3 + competitor line items</h2>
+            <table id="bTable"><thead><tr><th>Component</th><th class="num">$/user/mo</th><th class="num">Monthly</th></tr></thead><tbody></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-chart" class="hidden">
+        <div class="grid2">
+          <div><canvas id="chartTotals"></canvas></div>
+          <div><canvas id="chartStack"></canvas></div>
+        </div>
+      </div>
+
+      <div id="tab-caps" class="hidden">
+        <table id="capTable"><thead><tr><th>Capability</th><th>M365 E5</th><th>E3 + Competitor</th><th>Gap notes</th></tr></thead><tbody></tbody></table>
+      </div>
+
+      <div id="tab-notes" class="hidden">
+        <ul style="font-size:13px;line-height:1.7;color:var(--muted)">
+          <li>Vendors are sourced from the latest Gartner Magic Quadrants for each market (EPP 2025, Email Security Platforms 2024, Access Management 2024, SSE 2024, Analytics & BI Platforms 2024, UCaaS 2024, Enterprise Information Archiving 2024, Data Security Platforms / DSPM 2025). Position labels in dropdowns: <strong>L</strong>=Leader, <strong>C</strong>=Challenger, <strong>V</strong>=Visionary, <strong>NP</strong>=Niche Player.</li>
+          <li>Prices are public list prices (USD, per user / month) collected from vendor websites; actual EA / volume pricing varies. Adjust the discount fields to model your negotiated rates.</li>
+          <li>Microsoft list: M365 E3 $36.00, M365 E5 $57.00, Power BI Pro $14.00, Teams Phone $8.00, Defender for O365 P2 $5.00, Entra ID P2 $9.00 (incremental from P1 in E3).</li>
+          <li>Competitor list (typical commercial tier): CrowdStrike Falcon Pro $8.99, Proofpoint Email Protection $5.50, Okta Identity Engine + Adaptive MFA $11.00, Tableau Creator $75.00, Zoom Phone Pro $15.00, Mimecast Archive $4.00, Exterro eDiscovery $6.00, Netskope CASB $7.00, Varonis DSPM $5.00.</li>
+          <li>Capability mapping treats E5 as the baseline. "Partial" means the competitor covers the use case but with integration cost or reduced native fit inside the M365 surface.</li>
+          <li>This model excludes one-time migration, integration labor, training, and ELA true-up costs — typically $20–$60 per user one-time when introducing 3+ new vendors.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>Built as a planning aid. Validate vendor pricing with current quotes before any decision. Last reference price refresh: 2026-Q2 public list.</footer>
+
+<script>
+// ---------- Data ----------
+const E5_LINES = [
+  {name:"Microsoft 365 E5 (all-in)", price:57.00},
+];
+const E3_BASE = {name:"Microsoft 365 E3 (baseline)", price:36.00};
+
+// Each "gap" has a Microsoft component (already in E5) and 1+ competitor replacements.
+// Each gap = a capability E5 covers. Competitor list is curated from the most recent
+// Gartner Magic Quadrant Leaders / Visionaries / Challengers for that market.
+// L = Leader, C = Challenger, V = Visionary, NP = Niche Player (per latest MQ position).
+const GAPS = [
+  { id:"bi", label:"Analytics / BI (Power BI Pro)",
+    mq:"Analytics & BI Platforms MQ (2024)",
+    msComponent:{name:"Power BI Pro (in E5)", price:14.00},
+    competitors:[
+      {name:"Power BI Pro standalone (Microsoft, L)", price:14.00, default:true},
+      {name:"Tableau Creator (Salesforce, L)", price:75.00},
+      {name:"Qlik Sense Enterprise SaaS (Qlik, L)", price:30.00},
+      {name:"ThoughtSpot (V)", price:95.00},
+      {name:"Domo Standard (V)", price:83.00},
+      {name:"Sisense Cloud (NP)", price:60.00},
+      {name:"Oracle Analytics Cloud Pro (V)", price:80.00},
+      {name:"SAS Viya (L)", price:120.00},
+    ]},
+  { id:"voice", label:"Cloud Voice (Teams Phone)",
+    mq:"UCaaS MQ (2024)",
+    msComponent:{name:"Teams Phone (in E5)", price:8.00},
+    competitors:[
+      {name:"Teams Phone standalone (Microsoft, L)", price:8.00, default:true},
+      {name:"Zoom Phone Pro (Zoom, L)", price:15.00},
+      {name:"RingCentral RingEX Advanced (L)", price:25.00},
+      {name:"Cisco Webex Calling (C)", price:23.00},
+      {name:"8x8 X2 (NP)", price:24.00},
+      {name:"Dialpad Pro (NP)", price:25.00},
+      {name:"GoTo Connect Standard", price:32.00},
+    ]},
+  { id:"audio", label:"Audio Conferencing dial-in",
+    mq:"Meeting Solutions / UCaaS",
+    msComponent:{name:"Audio Conferencing (in E5)", price:4.00},
+    competitors:[
+      {name:"Audio Conferencing standalone (Microsoft)", price:4.00, default:true},
+      {name:"Zoom Meetings Business (Zoom, L)", price:18.32},
+      {name:"Cisco Webex Meet Business (C)", price:25.00},
+      {name:"Google Meet (Workspace add-on)", price:10.00},
+    ]},
+  { id:"endpoint", label:"Endpoint protection / EDR (Defender for Endpoint P2)",
+    mq:"Endpoint Protection Platforms MQ (2025)",
+    msComponent:{name:"Defender for Endpoint P2 (in E5)", price:5.20},
+    competitors:[
+      {name:"CrowdStrike Falcon Pro (L)", price:8.99, default:true},
+      {name:"SentinelOne Singularity Core (L)", price:6.00},
+      {name:"Palo Alto Cortex XDR Prevent (L)", price:7.50},
+      {name:"Trend Vision One Endpoint (L)", price:6.50},
+      {name:"Sophos Intercept X Advanced w/ XDR (L)", price:7.00},
+      {name:"Bitdefender GravityZone Business Sec Premium (V)", price:5.00},
+      {name:"Cisco Secure Endpoint Advantage (NP)", price:7.20},
+      {name:"ESET PROTECT Enterprise (NP)", price:6.10},
+    ]},
+  { id:"o365sec", label:"Email security (Defender for O365 P2)",
+    mq:"Email Security Platforms MQ (2024)",
+    msComponent:{name:"Defender for O365 P2 (in E5)", price:5.00},
+    competitors:[
+      {name:"Proofpoint Email Protection + TAP (L)", price:5.50, default:true},
+      {name:"Mimecast Email Security Enterprise (L)", price:4.50},
+      {name:"Cisco Secure Email Threat Defense (L)", price:5.20},
+      {name:"Abnormal Security (V)", price:6.50},
+      {name:"Barracuda Email Protection Advanced (C)", price:4.20},
+      {name:"Trellix Email Security Cloud (NP)", price:4.80},
+      {name:"Check Point Harmony Email & Collab (V)", price:5.00},
+    ]},
+  { id:"identitysec", label:"Identity threat detection (Defender for Identity)",
+    mq:"Identity Threat Detection & Response (ITDR)",
+    msComponent:{name:"Defender for Identity (in E5)", price:3.00},
+    competitors:[
+      {name:"CrowdStrike Falcon Identity Protection (L)", price:6.00, default:true},
+      {name:"Silverfort Unified Identity Protection (V)", price:7.00},
+      {name:"Semperis DSP", price:5.50},
+      {name:"Quest Change Auditor for AD", price:4.00},
+      {name:"Proofpoint Identity Threat Defense (Illusive)", price:5.00},
+    ]},
+  { id:"casb", label:"CASB / SSE (Defender for Cloud Apps)",
+    mq:"Security Service Edge (SSE) MQ (2024)",
+    msComponent:{name:"Defender for Cloud Apps (in E5)", price:3.50},
+    competitors:[
+      {name:"Netskope One SSE (L)", price:7.00, default:true},
+      {name:"Zscaler Internet Access Business (L)", price:8.00},
+      {name:"Palo Alto Prisma Access Business (L)", price:9.50},
+      {name:"Cisco Umbrella SIG Advantage (C)", price:7.50},
+      {name:"Skyhigh Security SSE (C)", price:6.50},
+      {name:"Forcepoint ONE SSE (NP)", price:6.00},
+      {name:"Cloudflare One Zero Trust (V)", price:7.00},
+    ]},
+  { id:"idp", label:"Premium identity (Entra ID P2 — PIM, ID Protection)",
+    mq:"Access Management MQ (2024)",
+    msComponent:{name:"Entra ID P2 increment (in E5)", price:3.00},
+    competitors:[
+      {name:"Okta Workforce Identity Adaptive MFA + SSO (L)", price:11.00, default:true},
+      {name:"Ping Identity PingOne for Workforce (L)", price:6.00},
+      {name:"IBM Security Verify SaaS (NP)", price:7.50},
+      {name:"CyberArk Identity Adaptive MFA + SSO (V)", price:8.00},
+      {name:"OneLogin by One Identity Advanced (NP)", price:8.00},
+      {name:"SailPoint IdentityNow Essentials (Identity Governance)", price:14.00},
+      {name:"Saviynt Enterprise Identity Cloud (Identity Governance)", price:13.00},
+    ]},
+  { id:"ediscovery", label:"eDiscovery (Premium) & Audit (Premium)",
+    mq:"eDiscovery Solutions (Forrester Wave / Gartner Hype)",
+    msComponent:{name:"Purview eDiscovery+Audit Premium (in E5)", price:5.00},
+    competitors:[
+      {name:"Relativity One Review", price:8.00, default:true},
+      {name:"Exterro E-Discovery & ICM", price:6.00},
+      {name:"OpenText Axcelerate", price:7.00},
+      {name:"Logikcull (Reveal)", price:5.50},
+      {name:"Nuix Discover", price:7.50},
+      {name:"DISCO Ediscovery", price:6.50},
+      {name:"Reveal Brainspace", price:7.00},
+    ]},
+  { id:"insider", label:"Insider Risk, DLP & DSPM (Premium)",
+    mq:"Data Security Platforms / DSPM MQ (2025)",
+    msComponent:{name:"Purview Insider Risk + DLP Premium (in E5)", price:4.00},
+    competitors:[
+      {name:"Varonis Data Security Platform (L)", price:5.00, default:true},
+      {name:"Forcepoint DLP Enterprise (L)", price:6.00},
+      {name:"Proofpoint Insider Threat Mgmt + DLP (L)", price:7.00},
+      {name:"Mimecast Incydr (Code42) (V)", price:6.50},
+      {name:"DTEX InTERCEPT (V)", price:5.50},
+      {name:"Symantec/Broadcom DLP Cloud (C)", price:6.00},
+      {name:"Cyera DSPM (V)", price:7.50},
+      {name:"Wiz DSPM add-on (V)", price:8.00},
+    ]},
+  { id:"archive", label:"Enterprise Information Archiving / Journaling",
+    mq:"Enterprise Information Archiving MQ (2024)",
+    msComponent:{name:"Exchange Online Archiving (in E5)", price:3.00},
+    competitors:[
+      {name:"Mimecast Cloud Archive (L)", price:4.00, default:true},
+      {name:"Proofpoint Enterprise Archive (L)", price:4.50},
+      {name:"Veritas Enterprise Vault.cloud (L)", price:4.00},
+      {name:"Smarsh Enterprise Archive (L)", price:5.00},
+      {name:"Global Relay Archive (L)", price:5.50},
+      {name:"OpenText InfoArchive (C)", price:4.20},
+      {name:"Microsoft Exchange Online Archiving standalone", price:3.00},
+    ]},
+];
+
+const CAPS = [
+  ["Office desktop apps & Exchange/SharePoint/Teams","Yes","Yes (in E3)","Identical"],
+  ["Power BI Pro analytics","Yes","Depends","Replaceable with Tableau (higher TCO) or Power BI Pro standalone"],
+  ["Cloud PSTN voice","Yes","Depends","Zoom/RingCentral provide parity; loses Teams-native UX"],
+  ["Endpoint EDR","Yes (MDE P2)","Yes (CrowdStrike/S1)","Best-of-breed often outperforms MDE; ↑ integration effort"],
+  ["Email threat protection","Yes (MDO P2)","Yes (Proofpoint/Mimecast)","Mature competitors; loses native Defender XDR correlation"],
+  ["Identity threat detection","Yes (MDI)","Yes (Falcon Identity)","Comparable; separate console"],
+  ["CASB / SaaS posture","Yes (MDA)","Yes (Netskope/Zscaler)","Stronger 3rd-party SaaS coverage"],
+  ["Conditional Access risk-based (PIM, ID Protection)","Yes (Entra ID P2)","Partial (Okta + add-ons)","Deep AAD-native PIM features hard to fully replicate"],
+  ["eDiscovery Premium / Audit Premium","Yes","Yes (Exterro/Relativity)","Mature; extra connectors needed for M365 sources"],
+  ["Insider Risk Management","Yes","Partial (Varonis + UEBA)","Microsoft has tighter signal access to M365"],
+  ["Information Protection (sensitivity labels, MIP SDK)","Yes","Partial","Hard to replicate label propagation across Office apps"],
+  ["Audio Conferencing dial-in","Yes","Yes (Zoom/Webex)","Equivalent"],
+  ["Single vendor accountability / unified XDR","Yes","No","Requires SIEM/SOAR to stitch signals (extra cost)"],
+];
+
+// ---------- Theme ----------
+const themeBtn = document.getElementById("themeBtn");
+const themeIcon = document.getElementById("themeIcon");
+const themeLabel = document.getElementById("themeLabel");
+function applyTheme(t){
+  document.documentElement.setAttribute("data-theme", t);
+  themeIcon.textContent = t==="dark" ? "🌙" : "☀️";
+  themeLabel.textContent = t==="dark" ? "Dark" : "Light";
+  try{ localStorage.setItem("m365sim-theme", t); }catch(e){}
+  if(!document.getElementById("tab-chart").classList.contains("hidden")) drawCharts();
+}
+const savedTheme = (()=>{ try{return localStorage.getItem("m365sim-theme")}catch(e){return null} })()
+  || (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+applyTheme(savedTheme);
+themeBtn.addEventListener("click", ()=>{
+  const cur = document.documentElement.getAttribute("data-theme");
+  applyTheme(cur==="dark" ? "light" : "dark");
+});
+function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+// ---------- UI rendering ----------
+const stackEl = document.getElementById("stack");
+const state = {};
+GAPS.forEach(g => {
+  const def = g.competitors.find(c=>c.default) || g.competitors[0];
+  state[g.id] = { enabled:true, choice: def.name };
+  const wrap = document.createElement("div");
+  wrap.className = "opt";
+  wrap.innerHTML = `
+    <div style="flex:1">
+      <div><strong>${g.label}</strong></div>
+      <small>MQ source: ${g.mq} · Replaces: ${g.msComponent.name.replace(' (in E5)','')}</small>
+      <div style="margin-top:6px">
+        <select data-gap="${g.id}" style="font-size:12px">
+          ${g.competitors.map(c=>`<option value="${c.name}" ${c.name===def.name?'selected':''}>${c.name} — $${c.price.toFixed(2)}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+    <input type="checkbox" data-toggle="${g.id}" checked style="margin-left:10px;transform:scale(1.2)" />
+  `;
+  stackEl.appendChild(wrap);
+});
+
+stackEl.addEventListener("change", e=>{
+  const t = e.target;
+  if(t.dataset.toggle){ state[t.dataset.toggle].enabled = t.checked; render(); }
+  if(t.dataset.gap){ state[t.dataset.gap].choice = t.value; render(); }
+});
+
+["users","term","msDisc","cmpDisc","usersRange"].forEach(id=>{
+  document.getElementById(id).addEventListener("input", e=>{
+    if(id==="users") document.getElementById("usersRange").value = Math.min(25000, +e.target.value||0);
+    if(id==="usersRange") document.getElementById("users").value = +e.target.value;
+    render();
+  });
+});
+
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    ["break","chart","caps","notes"].forEach(n=>document.getElementById("tab-"+n).classList.add("hidden"));
+    document.getElementById("tab-"+t.dataset.tab).classList.remove("hidden");
+    if(t.dataset.tab==="chart") drawCharts();
+  });
+});
+
+// ---------- Compute ----------
+let chartA, chartB;
+function fmt(n){ return "$"+n.toLocaleString(undefined,{maximumFractionDigits:0}); }
+
+function compute(){
+  const users = +document.getElementById("users").value || 0;
+  const term = +document.getElementById("term").value;
+  const msDisc = (+document.getElementById("msDisc").value||0)/100;
+  const cmpDisc = (+document.getElementById("cmpDisc").value||0)/100;
+
+  // Option A: E5
+  const aLines = E5_LINES.map(l=>({...l, price:l.price*(1-msDisc)}));
+  const aPerUser = aLines.reduce((s,l)=>s+l.price,0);
+
+  // Option B: E3 + selected competitors
+  const bLines = [{...E3_BASE, price:E3_BASE.price*(1-msDisc)}];
+  GAPS.forEach(g=>{
+    const s = state[g.id];
+    if(!s.enabled) return;
+    const c = g.competitors.find(x=>x.name===s.choice);
+    // If user selects a Microsoft standalone (e.g., Power BI Pro standalone, Teams Phone standalone, Audio Conf), use MS discount
+    const isMs = /Power BI Pro standalone|Teams Phone standalone|Audio Conferencing/.test(c.name);
+    const disc = isMs ? msDisc : cmpDisc;
+    bLines.push({name:c.name, price:c.price*(1-disc), gap:g.label});
+  });
+  const bPerUser = bLines.reduce((s,l)=>s+l.price,0);
+
+  return {users,term,aLines,bLines,aPerUser,bPerUser};
+}
+
+function render(){
+  const {users,term,aLines,bLines,aPerUser,bPerUser} = compute();
+  const aMonthly = aPerUser*users, bMonthly = bPerUser*users;
+  const aTerm = aMonthly*12*term, bTerm = bMonthly*12*term;
+
+  document.getElementById("aMonthly").innerHTML = fmt(aMonthly)+'<small>/mo total</small>';
+  document.getElementById("bMonthly").innerHTML = fmt(bMonthly)+'<small>/mo total</small>';
+  document.getElementById("aPerUser").textContent = `$${aPerUser.toFixed(2)} per user / month · ${users.toLocaleString()} users`;
+  document.getElementById("bPerUser").textContent = `$${bPerUser.toFixed(2)} per user / month · ${users.toLocaleString()} users`;
+  document.getElementById("aTerm").textContent = `${fmt(aTerm)} over ${term} year${term>1?'s':''}`;
+  document.getElementById("bTerm").textContent = `${fmt(bTerm)} over ${term} year${term>1?'s':''}`;
+
+  const diff = bMonthly - aMonthly;
+  const dEl = document.getElementById("delta");
+  if(diff < 0){ dEl.className="delta good"; dEl.textContent = `Saves ${fmt(-diff)}/mo (${fmt(-diff*12*term)} over term)`; }
+  else if(diff > 0){ dEl.className="delta bad"; dEl.textContent = `Costs ${fmt(diff)}/mo more (${fmt(diff*12*term)} over term)`; }
+  else{ dEl.className="delta"; dEl.textContent = "Same monthly cost"; }
+
+  fillTable("aTable", aLines, users);
+  fillTable("bTable", bLines, users);
+  fillCaps();
+  if(!document.getElementById("tab-chart").classList.contains("hidden")) drawCharts();
+}
+
+function fillTable(id,lines,users){
+  const tb = document.querySelector("#"+id+" tbody");
+  tb.innerHTML = lines.map(l=>`<tr><td>${l.name}</td><td class="num">$${l.price.toFixed(2)}</td><td class="num">${fmt(l.price*users)}</td></tr>`).join("")
+    + `<tr><td><strong>Total</strong></td><td class="num"><strong>$${lines.reduce((s,l)=>s+l.price,0).toFixed(2)}</strong></td><td class="num"><strong>${fmt(lines.reduce((s,l)=>s+l.price,0)*users)}</strong></td></tr>`;
+}
+
+function fillCaps(){
+  const tb = document.querySelector("#capTable tbody");
+  const cls = v => v==="Yes"?'cap-yes':(v==="Partial"?'cap-partial':(v==="No"?'cap-no':''));
+  tb.innerHTML = CAPS.map(c=>`<tr><td>${c[0]}</td><td class="${cls(c[1])}">${c[1]}</td><td class="${cls(c[2])}">${c[2]}</td><td style="color:var(--muted)">${c[3]}</td></tr>`).join("");
+}
+
+function drawCharts(){
+  const {users,term,aLines,bLines,aPerUser,bPerUser} = compute();
+  const ctx1 = document.getElementById("chartTotals");
+  const ctx2 = document.getElementById("chartStack");
+  if(chartA) chartA.destroy(); if(chartB) chartB.destroy();
+  const ink = cssVar("--ink"), tick = cssVar("--tick"), line = cssVar("--line");
+
+  const years = Array.from({length:term},(_,i)=>"Year "+(i+1));
+  chartA = new Chart(ctx1, {
+    type:'bar',
+    data:{ labels:years, datasets:[
+      {label:'M365 E5', data: years.map(()=>aPerUser*users*12), backgroundColor:'#5b8def'},
+      {label:'E3 + Competitor stack', data: years.map(()=>bPerUser*users*12), backgroundColor:'#23c993'}
+    ]},
+    options:{ responsive:true, plugins:{legend:{labels:{color:ink}}, title:{display:true,text:'Annual cost by option', color:ink}}, scales:{x:{ticks:{color:tick},grid:{color:line}},y:{ticks:{color:tick,callback:v=>'$'+(v/1e6).toFixed(1)+'M'},grid:{color:line}}}}
+  });
+
+  chartB = new Chart(ctx2, {
+    type:'doughnut',
+    data:{
+      labels: bLines.map(l=>l.name),
+      datasets:[{ data: bLines.map(l=>l.price*users), backgroundColor:['#5b8def','#23c993','#ffb454','#ff6b6b','#a78bfa','#22d3ee','#f472b6','#facc15','#34d399','#94a3b8','#fb923c','#60a5fa']}]
+    },
+    options:{ responsive:true, plugins:{legend:{position:'right',labels:{color:ink,font:{size:11}}}, title:{display:true,text:'Option B monthly spend mix', color:ink}}}
+  });
+}
+
+render();
+</script>
+</body>
+</html>
